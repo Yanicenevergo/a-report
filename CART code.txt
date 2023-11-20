@@ -1,0 +1,91 @@
+#In [1]
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import warnings
+warnings.filterwarnings(action = 'ignore')
+%matplotlib inline
+plt.rcParams['font.sans-serif']=['SimHei']  #解决中文显示乱码问题
+plt.rcParams['axes.unicode_minus']=False
+import sklearn.linear_model as LM
+from sklearn.model_selection import cross_val_score,train_test_split
+from sklearn.datasets import make_regression
+from sklearn import tree
+
+#In [2]
+import pandas as pd
+
+# 读取Excel文件
+data = pd.read_excel('Data-IP.xlsx')
+
+# 提取两列数据
+X=data[['D-1','D-2','D-3','D-4','GDPs','CPIs','Ams']]
+Y=data['D']
+
+# 打印X的数值
+print("X:", X)
+print("Y:", Y)
+
+#In [3]
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y,train_size=0.70, random_state=123)
+trainErr=[]
+testErr=[]
+CVErr=[]
+
+#使用树的深度进行寻优，从2层到15层
+for k in np.arange(2,15):
+    modelDTC = tree.DecisionTreeRegressor(max_depth=k,random_state=123)
+    modelDTC.fit(X_train,Y_train)
+    trainErr.append(1-modelDTC.score(X_train,Y_train))  #训练误差
+    testErr.append(1-modelDTC.score(X_test,Y_test))    #测试误差
+    Err=1-cross_val_score(modelDTC,X,Y,cv=5,scoring='r2')   #5-折交叉验证
+    CVErr.append(Err.mean())    
+
+fig = plt.figure(figsize=(20,6))
+ax1 = fig.add_subplot(121) 
+ax1.grid(True, linestyle='-.')
+ax1.plot(np.arange(2,15),trainErr,label="Training Errors",marker='o',linestyle='-')
+ax1.plot(np.arange(2,15),testErr,label="Testing Errors",marker='o',linestyle='-.')
+ax1.plot(np.arange(2,15),CVErr,label="5-fold cross validation error",marker='o',linestyle='--')
+ax1.set_xlabel("Depth of Tree")
+ax1.set_ylabel("Errors（1-R2）")
+ax1.set_title('Depth of Tree & Errors')
+ax1.legend()
+
+modelDTC = tree.DecisionTreeRegressor(max_depth=5,random_state=123)
+modelDTC.fit(X,Y)
+plt.show()
+
+#In [4]
+feature_names = ['D-1', 'D-2', 'D-3', 'D-4','GDPs', 'CPIs','Ams']
+
+#In [5]
+from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.datasets import load_iris
+import matplotlib.pyplot as plt
+
+# 加载示例数据集
+X = X_train
+y = Y_train
+
+# 创建并训练决策树模型
+model = DecisionTreeRegressor()
+model.fit(X, y)
+
+# 可视化决策树结构
+plt.figure(figsize=(10, 8))
+plot_tree(model, feature_names=feature_names, filled=True)
+
+#In [6]
+predict_data = { 'D-1':[1,1.0831,1.1686],'D-2':[1,1.0534,1.1410],
+                'D-3':[1,1.0849,1.1428],'D-4':[1,1.0609,1.1509],
+                'GDPs':[0.7571,0.7798,0.8649],'CPIs':[1,1.0200,1.0511],
+                'Ams':[1,1.0740,1.1410]}
+df_predict_data = pd.DataFrame(predict_data)
+
+#In [7]
+y_pred_15_17 = modelDTC.predict(df_predict_data)
+
+#In [8]
+y_pred_15_17
